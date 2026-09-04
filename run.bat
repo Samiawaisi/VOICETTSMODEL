@@ -1,8 +1,9 @@
 @echo off
 title Edge TTS Studio
-echo ========================================
-echo        Edge TTS Studio v1.0
-echo ========================================
+color 0A
+echo ===================================================
+echo             🎙️ EDGE TTS STUDIO v1.0
+echo ===================================================
 echo.
 
 :: Check if Python is installed
@@ -14,19 +15,19 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Install dependencies if needed
-if not exist "backend\venv" (
-    echo [INFO] Installing dependencies...
-    cd backend
-    pip install -r requirements.txt
-    cd ..
-    echo.
-)
+echo [1/2] Checking & Installing dependencies...
+cd /d "%~dp0backend"
+pip install -r requirements.txt --quiet
 
-echo [INFO] Starting Edge TTS Studio...
-echo [INFO] Open http://localhost:8000 in your browser
+echo.
+echo [2/2] Launching Edge TTS Studio App...
+echo.
+echo ===================================================
+echo   App is running at: http://localhost:8000
+echo   Browser will open automatically in 2 seconds!
+echo   (Keep this window open while using the app)
+echo ===================================================
 echo.
 
-cd backend
 python app.py
 pause

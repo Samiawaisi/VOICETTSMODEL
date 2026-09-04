@@ -1,5 +1,7 @@
 import os
 import sys
+import webbrowser
+import threading
 from pathlib import Path
 
 # Add backend directory to Python path
@@ -20,7 +22,7 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 app = FastAPI(
     title="Edge TTS Studio",
-    description="A powerful Text-to-Speech tool using Microsoft Edge TTS",
+    description="A powerful Text-to-Speech tool using Microsoft Edge TTS & Google TTS",
     version="1.0.0"
 )
 
@@ -55,6 +57,16 @@ if frontend_dir.exists():
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "Edge TTS Studio is running"}
+
+
+def open_browser():
+    webbrowser.open("http://localhost:8000")
+
+
+@app.on_event("startup")
+async def on_startup():
+    print("Edge TTS Studio started successfully at http://localhost:8000")
+    threading.Timer(1.5, open_browser).start()
 
 
 if __name__ == "__main__":
