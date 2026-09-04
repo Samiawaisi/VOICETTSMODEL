@@ -10,21 +10,22 @@ voice_service = VoiceService()
 async def get_voices(
     language: Optional[str] = Query(None, description="Filter by language code (e.g., 'en', 'ur', 'hi')"),
     gender: Optional[str] = Query(None, description="Filter by gender ('Male' or 'Female')"),
-    search: Optional[str] = Query(None, description="Search voices by name or locale")
+    search: Optional[str] = Query(None, description="Search voices by name or locale"),
+    engine: Optional[str] = Query(None, description="Filter by TTS engine ('edge' or 'google')")
 ):
     """Get available TTS voices with optional filters."""
     try:
         if search:
-            voices = await voice_service.search_voices(search)
+            voices = await voice_service.search_voices(search, engine=engine)
         elif language and gender:
-            lang_voices = await voice_service.get_voices_by_language(language)
+            lang_voices = await voice_service.get_voices_by_language(language, engine=engine)
             voices = [v for v in lang_voices if v.get("Gender", "").lower() == gender.lower()]
         elif language:
-            voices = await voice_service.get_voices_by_language(language)
+            voices = await voice_service.get_voices_by_language(language, engine=engine)
         elif gender:
-            voices = await voice_service.get_voices_by_gender(gender)
+            voices = await voice_service.get_voices_by_gender(gender, engine=engine)
         else:
-            voices = await voice_service.get_all_voices()
+            voices = await voice_service.get_all_voices(engine=engine)
 
         return {
             "voices": voices,
@@ -35,9 +36,9 @@ async def get_voices(
 
 
 @router.get("/languages")
-async def get_languages():
+async def get_languages(engine: Optional[str] = Query(None)):
     """Get list of available languages."""
-    languages = await voice_service.get_languages()
+    languages = await voice_service.get_languages(engine=engine)
     return {"languages": languages, "total": len(languages)}
 
 

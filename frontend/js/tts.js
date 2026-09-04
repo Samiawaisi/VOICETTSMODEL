@@ -16,6 +16,7 @@ const TTSManager = {
         const downloadBtn = document.getElementById('downloadBtn');
 
         // Get settings
+        const engine = document.getElementById('engineSelect') ? document.getElementById('engineSelect').value : 'edge';
         const voice = document.getElementById('voiceSelect').value;
         const rate = `${document.getElementById('rateSlider').value >= 0 ? '+' : ''}${document.getElementById('rateSlider').value}%`;
         const pitch = `${document.getElementById('pitchSlider').value >= 0 ? '+' : ''}${document.getElementById('pitchSlider').value}Hz`;
@@ -41,7 +42,7 @@ const TTSManager = {
             progress += Math.random() * 15;
             if (progress > 90) progress = 90;
             progressFill.style.width = `${progress}%`;
-            if (progress > 30) progressText.textContent = 'Processing with Edge TTS...';
+            if (progress > 30) progressText.textContent = `Processing with ${engine === 'google' ? 'Google TTS' : 'Microsoft Edge TTS'}...`;
             if (progress > 60) progressText.textContent = 'Generating audio...';
         }, 500);
 
@@ -52,6 +53,7 @@ const TTSManager = {
                 body: JSON.stringify({
                     text,
                     voice,
+                    engine,
                     rate,
                     pitch,
                     volume,

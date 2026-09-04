@@ -58,6 +58,17 @@
                 </div>
                 <div class="card-body">
                     <div class="settings-grid">
+                        <!-- TTS Engine Selection -->
+                        <div class="form-group">
+                            <label for="engineSelect">
+                                <i class="fas fa-robot"></i> TTS Model
+                            </label>
+                            <select id="engineSelect">
+                                <option value="edge">Microsoft Edge TTS (400+ Neural Voices)</option>
+                                <option value="google">Google TTS (Translate Engine)</option>
+                            </select>
+                        </div>
+
                         <!-- Language Filter -->
                         <div class="form-group">
                             <label for="languageSelect">
@@ -68,10 +79,10 @@
                             </select>
                         </div>
 
-                        <!-- Voice Selection -->
+                        <!-- Voice / Character Selection -->
                         <div class="form-group">
                             <label for="voiceSelect">
-                                <i class="fas fa-user-circle"></i> Voice
+                                <i class="fas fa-user-check"></i> Character / Voice Name
                             </label>
                             <select id="voiceSelect">
                                 <option value="">Loading voices...</option>

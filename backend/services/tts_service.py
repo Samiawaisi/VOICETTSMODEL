@@ -4,13 +4,14 @@ import uuid
 import os
 from pathlib import Path
 from typing import Optional
+from gtts import gTTS
 from config import OUTPUT_DIR, DEFAULT_VOICE, DEFAULT_RATE, DEFAULT_PITCH, DEFAULT_VOLUME
 from utils.text_chunker import TextChunker
 from utils.audio_utils import merge_audio_files, get_audio_duration
 
 
 class TTSService:
-    """Service for converting text to speech using Microsoft Edge TTS."""
+    """Service for converting text to speech using Microsoft Edge TTS and Google TTS."""
 
     def __init__(self):
         self.chunker = TextChunker()
@@ -22,33 +23,29 @@ class TTSService:
         rate: str = DEFAULT_RATE,
         pitch: str = DEFAULT_PITCH,
         volume: str = DEFAULT_VOLUME,
-        output_format: str = "mp3"
+        output_format: str = "mp3",
+        engine: str = "edge"
     ) -> dict:
         """Generate speech from text. Handles long text by chunking."""
         if not text.strip():
             raise ValueError("Text cannot be empty")
 
         file_id = str(uuid.uuid4())
-
-        # Check if text needs chunking
         chunks = self.chunker.chunk_text(text)
 
         if len(chunks) == 1:
-            # Single chunk - direct conversion
             output_path = OUTPUT_DIR / f"{file_id}.{output_format}"
-            await self._convert_chunk(chunks[0], str(output_path), voice, rate, pitch, volume)
+            await self._convert_chunk(chunks[0], str(output_path), voice, rate, pitch, volume, engine)
         else:
-            # Multiple chunks - convert each then merge
             chunk_files = []
             for i, chunk in enumerate(chunks):
                 chunk_path = OUTPUT_DIR / f"{file_id}_chunk_{i}.mp3"
-                await self._convert_chunk(chunk, str(chunk_path), voice, rate, pitch, volume)
+                await self._convert_chunk(chunk, str(chunk_path), voice, rate, pitch, volume, engine)
                 chunk_files.append(str(chunk_path))
 
             output_path = OUTPUT_DIR / f"{file_id}.{output_format}"
             await merge_audio_files(chunk_files, str(output_path))
 
-            # Cleanup chunk files
             for f in chunk_files:
                 try:
                     os.remove(f)
@@ -64,6 +61,7 @@ class TTSService:
             "duration": duration,
             "chunks_used": len(chunks),
             "voice": voice,
+            "engine": engine,
             "format": output_format
         }
 
@@ -74,17 +72,30 @@ class TTSService:
         voice: str,
         rate: str,
         pitch: str,
-        volume: str
+        volume: str,
+        engine: str
     ) -> None:
-        """Convert a single text chunk to audio."""
-        communicate = edge_tts.Communicate(
-            text=text,
-            voice=voice,
-            rate=rate,
-            pitch=pitch,
-            volume=volume
-        )
-        await communicate.save(output_path)
+        """Convert a single text chunk to audio using selected engine."""
+        if engine == "google" or voice.startswith("google-"):
+            # Extract language code, e.g., "google-ur" -> "ur", or "ur-PK" -> "ur"
+            lang = voice.replace("google-", "").split("-")[0]
+            if not lang:
+                lang = "en"
+
+            def _run_gtts():
+                tts = gTTS(text=text, lang=lang)
+                tts.save(output_path)
+
+            await asyncio.to_thread(_run_gtts)
+        else:
+            communicate = edge_tts.Communicate(
+                text=text,
+                voice=voice,
+                rate=rate,
+                pitch=pitch,
+                volume=volume
+            )
+            await communicate.save(output_path)
 
     async def generate_speech_stream(
         self,
@@ -94,7 +105,7 @@ class TTSService:
         pitch: str = DEFAULT_PITCH,
         volume: str = DEFAULT_VOLUME
     ):
-        """Stream audio data for real-time playback."""
+        """Stream audio data for real-time playback (Edge TTS)."""
         communicate = edge_tts.Communicate(
             text=text,
             voice=voice,

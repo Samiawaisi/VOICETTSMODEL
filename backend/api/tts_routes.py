@@ -12,6 +12,7 @@ tts_service = TTSService()
 class TTSRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=100000, description="Text to convert to speech")
     voice: str = Field(default="en-US-AriaNeural", description="Voice name")
+    engine: str = Field(default="edge", description="TTS Engine: 'edge' or 'google'")
     rate: str = Field(default="+0%", description="Speech rate (e.g., '+50%', '-25%')")
     pitch: str = Field(default="+0Hz", description="Speech pitch (e.g., '+10Hz', '-5Hz')")
     volume: str = Field(default="+0%", description="Speech volume (e.g., '+50%', '-25%')")
@@ -24,6 +25,7 @@ class TTSResponse(BaseModel):
     duration: Optional[float]
     chunks_used: int
     voice: str
+    engine: str
     format: str
     download_url: str
 
@@ -38,7 +40,8 @@ async def generate_speech(request: TTSRequest):
             rate=request.rate,
             pitch=request.pitch,
             volume=request.volume,
-            output_format=request.output_format
+            output_format=request.output_format,
+            engine=request.engine
         )
         return TTSResponse(
             file_id=result["file_id"],
@@ -46,6 +49,7 @@ async def generate_speech(request: TTSRequest):
             duration=result["duration"],
             chunks_used=result["chunks_used"],
             voice=result["voice"],
+            engine=result.get("engine", request.engine),
             format=result["format"],
             download_url=f"/output/{result['filename']}"
         )

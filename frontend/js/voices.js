@@ -1,4 +1,4 @@
-// Voice Manager - Handles voice loading and filtering
+// Voice Manager - Handles voice loading, character names, and engine filtering
 const VoiceManager = {
     allVoices: [],
     filteredVoices: [],
@@ -12,19 +12,18 @@ const VoiceManager = {
     async loadVoices() {
         const voiceSelect = document.getElementById('voiceSelect');
         const languageSelect = document.getElementById('languageSelect');
+        const engineSelect = document.getElementById('engineSelect');
+        const currentEngine = engineSelect ? engineSelect.value : 'edge';
 
         try {
-            // Fetch voices
-            const response = await fetch('/api/voices/');
+            voiceSelect.innerHTML = '<option value="">Loading voices...</option>';
+            const response = await fetch(`/api/voices/?engine=${currentEngine}`);
             const data = await response.json();
             this.allVoices = data.voices;
             this.filteredVoices = [...this.allVoices];
 
             // Populate language dropdown
-            const languages = [...new Set(this.allVoices.map(v => {
-                const locale = v.Locale || '';
-                return locale;
-            }))].sort();
+            const languages = [...new Set(this.allVoices.map(v => v.Locale || ''))].filter(Boolean).sort();
 
             languageSelect.innerHTML = '<option value="">All Languages</option>' +
                 languages.map(lang => `<option value="${lang}">${lang}</option>`).join('');
@@ -32,7 +31,7 @@ const VoiceManager = {
             // Populate voice dropdown
             this.updateVoiceDropdown();
 
-            console.log(`Loaded ${this.allVoices.length} voices`);
+            console.log(`Loaded ${this.allVoices.length} voices for engine: ${currentEngine}`);
         } catch (error) {
             console.error('Failed to load voices:', error);
             voiceSelect.innerHTML = '<option value="">Failed to load voices</option>';
@@ -41,9 +40,13 @@ const VoiceManager = {
     },
 
     setupFilters() {
+        const engineSelect = document.getElementById('engineSelect');
         const languageSelect = document.getElementById('languageSelect');
         const genderSelect = document.getElementById('genderSelect');
 
+        if (engineSelect) {
+            engineSelect.addEventListener('change', () => this.loadVoices());
+        }
         languageSelect.addEventListener('change', () => this.applyFilters());
         genderSelect.addEventListener('change', () => this.applyFilters());
     },
@@ -55,7 +58,7 @@ const VoiceManager = {
         this.filteredVoices = this.allVoices.filter(v => {
             let match = true;
             if (language) {
-                match = match && (v.Locale || '').startsWith(language);
+                match = match && (v.Locale || '').toLowerCase().startsWith(language.toLowerCase());
             }
             if (gender) {
                 match = match && (v.Gender || '').toLowerCase() === gender.toLowerCase();
@@ -76,13 +79,12 @@ const VoiceManager = {
         }
 
         voiceSelect.innerHTML = voices.map(v => {
-            const name = v.FriendlyName || v.ShortName;
-            const gender = v.Gender ? ` (${v.Gender})` : '';
-            return `<option value="${v.ShortName}">${name}${gender}</option>`;
+            const label = v.DisplayName || `${v.CharacterName || v.ShortName} (${v.Locale})`;
+            return `<option value="${v.ShortName}">${label}</option>`;
         }).join('');
 
-        // Try to select default voice
-        const defaultVoice = voices.find(v => v.ShortName === 'en-US-AriaNeural');
+        // Default voice selection
+        const defaultVoice = voices.find(v => v.ShortName === 'en-US-AriaNeural') || voices[0];
         if (defaultVoice) {
             voiceSelect.value = defaultVoice.ShortName;
         }
